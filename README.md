@@ -1,8 +1,8 @@
-#A HTTP statistic exporter for Prometheus written in Go
+A HTTP statistic exporter for Prometheus written in Go
 
 This is a HTTP statistic gathering script written in Go to export metrics to Prometheus
 
-#How to check metrics
+How to check metrics
 
 Run the Script
 
@@ -12,6 +12,6 @@ This will continually run on PORT:7777
 Go to the /metric extension to see the metrics.
 It checks the metrics every time the request is recieved.
 
-#Thanks
+Thanks
 The original idea came from httpstat command (and Dave Cheney's golang implementation), and Taichi Nakashima's package go-httpstat.
 
