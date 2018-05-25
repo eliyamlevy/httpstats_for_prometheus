@@ -13,9 +13,8 @@ import (
 func main() {
 	//Create config struct
 	type Configuration struct {
-		Port    string
-		numURLs int
-		URLmap  []string
+		Port   string
+		URLmap []string
 	}
 	configuration := Configuration{}
 
@@ -63,7 +62,9 @@ func main() {
 
 	//Register all the metrics with Prometheus
 	prometheus.MustRegister(dnsLatencyVec, tcpLatencyVec, requestTimer, requestAvgDurationVec)
-	for i := 0; i < 2; i++ {
+	//
+	numURLs := len(configuration.URLmap)
+	for i := 0; i < numURLs; i++ {
 		// Define functions for the available httptrace.ClientTrace hook
 		// functions that we want to instrument.
 		trace := &promhttp.InstrumentTrace{
