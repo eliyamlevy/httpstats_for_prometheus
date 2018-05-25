@@ -1,0 +1,5 @@
+{
+    "Port": ":7777",
+    "numURLs": 2,
+    "URLmap": ["http://www.google.com","http://www.msn.com"]
+}
