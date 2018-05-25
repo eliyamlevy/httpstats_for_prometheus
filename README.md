@@ -1,16 +1,8 @@
 A HTTP statistic exporter for Prometheus written in Go
 ======
-This is a HTTP statistic gathering script written in Go to export metrics to Prometheus
+This is a HTTP statistic gathering script written in Go to export metrics to Prometheus.
 
-How to check metrics
------
-Run the Script
-
-    $ go run metric1.go
-
-This will continually run on PORT:7777
-Go to the /metric extension to see the metrics.
-It checks the metrics every time the request is recieved.
+The config file allows for adding multiple links, and changing the port. Default port is ":7777", just remember to change it in the dockerfile as well if you want a different port.
 
 Thanks
 ------
