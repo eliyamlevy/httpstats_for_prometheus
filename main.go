@@ -117,6 +117,7 @@ func main() {
 				timer3.ObserveDuration()
 			},
 		}
+		log.Printf("trace created")
 
 		// Wrap the default RoundTripper with middleware.
 		roundTripper := promhttp.InstrumentRoundTripperTrace(trace,
