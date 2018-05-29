@@ -1,4 +1,4 @@
 {
     "Port": ":7777",
-    "URLmap": ["http://www.google.com"]
+    "URLmap": ["https://www.google.com", "https://golang.org/", "https://stackoverflow.com/"]
 }

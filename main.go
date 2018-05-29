@@ -58,7 +58,15 @@ func main() {
 	dnsLatencyVec := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "dns_duration_seconds",
-			Help: "Trace dns latency Gauge.",
+			Help: "Trace dns latency.",
+		},
+		[]string{"method", "url"},
+	)
+	//TLSHandshakeVec
+	TLSHandshakeVec := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "TLS_duration_seconds",
+			Help: "Trace TLS latency.",
 		},
 		[]string{"method", "url"},
 	)
@@ -66,7 +74,7 @@ func main() {
 	tcpLatencyVec := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "tcp_duration_seconds",
-			Help: "Trace tcp latency Gauge.",
+			Help: "Trace tcp latency.",
 		}, []string{"method", "url"},
 	)
 	//requestTimer
@@ -85,7 +93,7 @@ func main() {
 		[]string{"method"},
 	)
 	//Register all the metrics with Prometheus
-	prometheus.MustRegister(dnsLatencyVec, tcpLatencyVec, requestTimer, requestAvgDurationVec)
+	prometheus.MustRegister(dnsLatencyVec, TLSHandshakeVec, tcpLatencyVec, requestTimer, requestAvgDurationVec)
 
 	//Run roundtrip for each URL
 	numURLs := len(configuration.URLmap)
@@ -94,12 +102,19 @@ func main() {
 		// functions that we want to instrument.
 		timer1 := prometheus.NewTimer(prometheus.ObserverFunc(dnsLatencyVec.WithLabelValues("dns_start", configuration.URLmap[i]).Set))
 		timer2 := prometheus.NewTimer(prometheus.ObserverFunc(tcpLatencyVec.WithLabelValues("TCP_start", configuration.URLmap[i]).Set))
+		timer3 := prometheus.NewTimer(prometheus.ObserverFunc(TLSHandshakeVec.WithLabelValues("TCP_start", configuration.URLmap[i]).Set))
 		trace := &promhttp.InstrumentTrace{
 			DNSDone: func(t float64) {
 				timer1.ObserveDuration()
 			},
 			ConnectDone: func(t float64) {
 				timer2.ObserveDuration()
+			},
+			TLSHandshakeStart: func(t float64) {
+				timer3 = prometheus.NewTimer(prometheus.ObserverFunc(TLSHandshakeVec.WithLabelValues("TCP_start", configuration.URLmap[i]).Set))
+			},
+			TLSHandshakeDone: func(t float64) {
+				timer3.ObserveDuration()
 			},
 		}
 
