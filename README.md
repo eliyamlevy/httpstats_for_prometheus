@@ -7,10 +7,11 @@ The config file allows for adding multiple links, and changing the port. Default
 To Build:
 -------
 
-$ go build -o goscraper main.go
+  $ go build -o goscraper main.go
 
 Thanks
 ------
 The original idea came from httpstat command (and Dave Cheney's golang implementation), and Taichi Nakashima's package go-httpstat.
 
-ref: https://github.com/davecheney/httpstat https://github.com/tcnksm/go-httpstat
+ref: https://github.com/davecheney/httpstat 
+     https://github.com/tcnksm/go-httpstat
