@@ -1,4 +1,4 @@
 {
     "Port": ":7777",
-    "URLmap": ["http://www.google.com","https://fsymbols.com/text-art/"]
+    "URLmap": ["http://www.google.com"]
 }
