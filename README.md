@@ -4,6 +4,10 @@ This is a HTTP statistic gathering script written in Go to export metrics to Pro
 
 The config file allows for adding multiple links, and changing the port. Default port is ":7777", just remember to change it in the dockerfile as well if you want a different port.
 
+To Build:
+
+$go build -o goscraper main.go
+
 Thanks
 ------
 The original idea came from httpstat command (and Dave Cheney's golang implementation), and Taichi Nakashima's package go-httpstat.
