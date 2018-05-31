@@ -1,5 +1,6 @@
 {
     "ScrapeInterval": 5,
+    "Timeout": 3,
     "Port": ":7777",
     "URLmap": ["https://www.google.com", "https://docks.docker.com", "https://www.stackoverflow.com/"]
 }

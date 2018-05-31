@@ -24,6 +24,7 @@ var path = "log.txt"
 //Configuration create config struct
 type Configuration struct {
 	ScrapeInterval int
+	Timeout        int
 	Port           string
 	URLmap         []string
 }
@@ -31,44 +32,44 @@ type Configuration struct {
 var configuration = Configuration{}
 
 //Create Summaries
-// dns_latency_gauge_goscraper gauge vector
-var dns_latency_gauge_goscraper = prometheus.NewGaugeVec(
+// goscraper_dns_latency_gauge gauge vector
+var goscraper_dns_latency_gauge = prometheus.NewGaugeVec(
 	prometheus.GaugeOpts{
-		Name: "dns_duration_seconds",
+		Name: "goscraper_dns_latency_gauge",
 		Help: "Trace dns latency.",
 	},
 	[]string{"method", "url"},
 )
 
-//tls_handshake_latency_goscraper gauge vector
-var tls_handshake_latency_goscraper = prometheus.NewGaugeVec(
+//goscraper_tls_handshake_latency gauge vector
+var goscraper_tls_handshake_latency = prometheus.NewGaugeVec(
 	prometheus.GaugeOpts{
-		Name: "TLS_duration_seconds",
+		Name: "goscraper_tls_handshake_latency",
 		Help: "Trace TLS latency.",
 	},
 	[]string{"method", "url"},
 )
 
-//tcp_latency_gauge_goscraper gauge vector
-var tcp_latency_gauge_goscraper = prometheus.NewGaugeVec(
+//goscraper_tcp_latency_gauge gauge vector
+var goscraper_tcp_latency_gauge = prometheus.NewGaugeVec(
 	prometheus.GaugeOpts{
-		Name: "tcp_duration_seconds",
+		Name: "goscraper_tcp_latency_gauge",
 		Help: "Trace tcp latency.",
 	}, []string{"method", "url"},
 )
 
-//total_request_time_goscraper gauge vector
-var total_request_time_goscraper = prometheus.NewGaugeVec(
+//goscraper_total_request_time gauge vector
+var goscraper_total_request_time = prometheus.NewGaugeVec(
 	prometheus.GaugeOpts{
-		Name: "request_timer",
+		Name: "goscraper_total_request_time",
 		Help: "Request Timer.",
 	}, []string{"method", "url"},
 )
 
-// request_duration_summary_goscraper summary vector
-var request_duration_summary_goscraper = prometheus.NewSummaryVec(
+// goscraper_request_duration_summary summary vector
+var goscraper_request_duration_summary = prometheus.NewSummaryVec(
 	prometheus.SummaryOpts{
-		Name: "request_duration_seconds",
+		Name: "goscraper_request_duration_summary",
 		Help: "Request duration in seconds.",
 	},
 	[]string{"method"},
@@ -79,7 +80,7 @@ func init() {
 	createFindDir()
 
 	//Register all the metrics with Prometheus
-	prometheus.MustRegister(dns_latency_gauge_goscraper, tls_handshake_latency_goscraper, tcp_latency_gauge_goscraper, total_request_time_goscraper, request_duration_summary_goscraper)
+	prometheus.MustRegister(goscraper_dns_latency_gauge, goscraper_tls_handshake_latency, goscraper_tcp_latency_gauge, goscraper_total_request_time, goscraper_request_duration_summary)
 
 	//Capture if the program is exited and logs exit signal
 	c := make(chan os.Signal)
@@ -110,7 +111,7 @@ func init() {
 
 func main() {
 	//Set client timeout
-	http.DefaultClient.Timeout = 10 * time.Second
+	http.DefaultClient.Timeout = time.Duration(configuration.Timeout) * time.Second
 
 	//go func that runs the runRequest func and sleeps based off of config
 	funcRan := 0
@@ -145,9 +146,9 @@ func readAndClose(url string) {
 func createTrace(url string) promhttp.InstrumentTrace {
 	// Define functions for the available httptrace.ClientTrace hook
 	// functions that we want to instrument.
-	timer1 := prometheus.NewTimer(prometheus.ObserverFunc(dns_latency_gauge_goscraper.WithLabelValues("dns_start", url).Set))
-	timer2 := prometheus.NewTimer(prometheus.ObserverFunc(tcp_latency_gauge_goscraper.WithLabelValues("TCP_start", url).Set))
-	timer3 := prometheus.NewTimer(prometheus.ObserverFunc(tls_handshake_latency_goscraper.WithLabelValues("TCP_start", url).Set))
+	timer1 := prometheus.NewTimer(prometheus.ObserverFunc(goscraper_dns_latency_gauge.WithLabelValues("dns_start", url).Set))
+	timer2 := prometheus.NewTimer(prometheus.ObserverFunc(goscraper_tcp_latency_gauge.WithLabelValues("TCP_start", url).Set))
+	timer3 := prometheus.NewTimer(prometheus.ObserverFunc(goscraper_tls_handshake_latency.WithLabelValues("TCP_start", url).Set))
 	trace := &promhttp.InstrumentTrace{
 		DNSDone: func(t float64) {
 			timer1.ObserveDuration()
@@ -156,7 +157,7 @@ func createTrace(url string) promhttp.InstrumentTrace {
 			timer2.ObserveDuration()
 		},
 		TLSHandshakeStart: func(t float64) {
-			timer3 = prometheus.NewTimer(prometheus.ObserverFunc(tls_handshake_latency_goscraper.WithLabelValues("TCP_start", url).Set))
+			timer3 = prometheus.NewTimer(prometheus.ObserverFunc(goscraper_tls_handshake_latency.WithLabelValues("TCP_start", url).Set))
 		},
 		TLSHandshakeDone: func(t float64) {
 			timer3.ObserveDuration()
@@ -175,7 +176,7 @@ func runRequest() {
 
 		// Wrap the default RoundTripper with middleware.
 		roundTripper := promhttp.InstrumentRoundTripperTrace(&trace,
-			promhttp.InstrumentRoundTripperDuration(request_duration_summary_goscraper, http.DefaultTransport))
+			promhttp.InstrumentRoundTripperDuration(goscraper_request_duration_summary, http.DefaultTransport))
 
 		// Set the RoundTripper on the client.
 		http.DefaultClient.Transport = roundTripper
@@ -183,7 +184,7 @@ func runRequest() {
 		appendFile("roundtripper created", path)
 
 		//Time the request
-		timer0 := prometheus.NewTimer(prometheus.ObserverFunc(total_request_time_goscraper.WithLabelValues("GET", configuration.URLmap[i]).Set))
+		timer0 := prometheus.NewTimer(prometheus.ObserverFunc(goscraper_total_request_time.WithLabelValues("GET", configuration.URLmap[i]).Set))
 		readAndClose(configuration.URLmap[i])
 		timer0.ObserveDuration()
 		log.Printf("GET run with url: " + configuration.URLmap[i])
