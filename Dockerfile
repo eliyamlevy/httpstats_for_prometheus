@@ -4,5 +4,5 @@ RUN go get github.com/tkanos/gonfig
 RUN mkdir /app
 ADD . /app/
 WORKDIR /app
-RUN go build -o main .
-CMD ["/app/main"]
+RUN ls -R /app
+RUN go run /app/main.go
