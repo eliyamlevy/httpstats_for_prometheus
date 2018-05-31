@@ -7,6 +7,8 @@ The config file allows for adding multiple links, and changing the port. Default
 To Run
 --
 ```bash
+go get github.com/prometheus/client_golang/prometheus
+go get github.com/tkanos/gonfig
 go run main.go
 ```
 
