@@ -19,6 +19,8 @@ var confPaths = []string{
 	"/app/config.json",           //inside a docker container
 }
 
+var path = "log.txt"
+
 //Configuration create config struct
 type Configuration struct {
 	ScrapeInterval int
@@ -73,6 +75,9 @@ var requestAvgDurationVec = prometheus.NewSummaryVec(
 )
 
 func init() {
+	//Create/Find log folder and add new log file
+	createFindDir()
+
 	//Register all the metrics with Prometheus
 	prometheus.MustRegister(dnsLatencyVec, TLSHandshakeVec, tcpLatencyVec, requestTimer, requestAvgDurationVec)
 
@@ -83,11 +88,13 @@ func init() {
 		select {
 		case sig := <-c:
 			log.Printf("Got %s signal. Aborting...\n", sig)
+			appendFile(fmt.Sprintf("Got %s signal. Aborting...\n", sig), path)
 			os.Exit(1)
 		}
 	}()
 
 	//Grab Details
+	log.Printf("confPath %v", confPaths)
 	for i := 0; i < len(confPaths); i++ {
 		err := gonfig.GetConf(confPaths[i], &configuration)
 		if err != nil {
@@ -97,6 +104,8 @@ func init() {
 		}
 	}
 	log.Printf("Config: " + fmt.Sprintf("%+v", configuration))
+	appendFile("Config: "+fmt.Sprintf("%+v", configuration), path)
+
 }
 
 func main() {
@@ -110,6 +119,7 @@ func main() {
 			runRequest()
 			funcRan++
 			log.Printf("Function run %d time(s)", funcRan)
+			appendFile(fmt.Sprintf("Function run %d time(s)", funcRan), path)
 			time.Sleep(time.Duration(configuration.ScrapeInterval) * time.Second)
 		}
 	}()
@@ -161,6 +171,7 @@ func runRequest() {
 		//Create trace for each URL
 		trace := createTrace(configuration.URLmap[i])
 		log.Printf("trace created")
+		appendFile("trace created", path)
 
 		// Wrap the default RoundTripper with middleware.
 		roundTripper := promhttp.InstrumentRoundTripperTrace(&trace,
@@ -169,11 +180,57 @@ func runRequest() {
 		// Set the RoundTripper on the client.
 		http.DefaultClient.Transport = roundTripper
 		log.Printf("roundtripper created")
+		appendFile("roundtripper created", path)
 
 		//Time the request
 		timer0 := prometheus.NewTimer(prometheus.ObserverFunc(requestTimer.WithLabelValues("GET", configuration.URLmap[i]).Set))
 		readAndClose(configuration.URLmap[i])
 		timer0.ObserveDuration()
 		log.Printf("GET run with url: " + configuration.URLmap[i])
+		appendFile("GET run with url: "+configuration.URLmap[i], path)
+	}
+}
+
+func createFindDir() {
+	//Check if log folder exists
+	if _, err := os.Stat("logs"); os.IsNotExist(err) {
+		os.Mkdir("logs", os.ModePerm)
+		log.Printf("Log Folder Created")
+		createFile()
+	} else {
+		log.Printf("Log Folder Found")
+		createFile()
+	}
+}
+
+func createFile() {
+	// detect if log file exists
+	var _, err = os.Stat(path)
+
+	// create log file if does not exists
+	if os.IsNotExist(err) {
+		path = "logs/log" + time.Now().Format("2006-01-0215:04:05") + ".txt"
+		var file, err = os.Create(path)
+		if err != nil {
+			return
+		}
+		defer file.Close()
+		log.Println("done creating file", path)
+	} else {
+		log.Println("file found", path)
+	}
+}
+
+//function to append strings to a text file
+func appendFile(str, path string) {
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatalf("failed opening file: %s", err)
+	}
+	defer file.Close()
+	t := time.Now().Format("2006-01-0215:04:05")
+	_, err = file.WriteString(t + " " + str + "\n")
+	if err != nil {
+		log.Fatalf("failed writing to file: %s", err)
 	}
 }
